@@ -24,6 +24,10 @@ def require_api_key(f):
 
     return decorated
 
+@app.route("/", methods=["GET"])
+def home():
+    return "Pulse Diagnosis API is running"
+
 @app.route("/api/v1/health", methods=["GET"])
 def health():
     return jsonify({
