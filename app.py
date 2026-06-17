@@ -11,17 +11,9 @@ app = Flask(__name__)
 # Load ML model
 model = joblib.load("pulse_model.pkl")
 
-# API Key from Render Environment Variables
-def new_func():
-    API_KEY = os.environ.get("API_KEY","sm0399")
-    return API_KEY
+API_KEY = os.environ.get("msua2003")  #secure key in production
 
-API_KEY = new_func()
-
-if API_KEY is None:
-    raise ValueError("API_KEY environment variable is not set.")
-
-
+# Auth function
 def require_api_key(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -37,17 +29,11 @@ def require_api_key(f):
 
     return decorated
 
-@app.route("/", methods=["GET"])
-def home():
-    return "Pulse Diagnosis API is running"
-
-
-#@app.route("/api/v1/health", methods=["GET"])
-#def health():
-#
-#    return jsonify({
-#        "status": "healthy"
-#    }), 200
+@app.route("/api/v1/health", methods=["GET"])
+def health():
+    return jsonify({
+        "status": "healthy"
+    }), 200
 
 
 @app.route("/api/v1/predict", methods=["POST"])
@@ -58,25 +44,14 @@ def predict():
     print("Raw Data:", request.data)
 
     data = request.get_json()
-    
-    print("Received JSON:", data)
 
+    # 🔴 Safety check (prevents 500 crash)
     if not data:
-        return jsonify({
-            "error": "No JSON data received"
-        }), 400
-        
+        return jsonify({"error": "No JSON data received"}), 400
     
     try:
-
-        required = [
-            "mean",
-            "std",
-            "variance",
-            "min",
-            "max",
-            "energy",
-        ]
+        # Check whether all required fields exist
+        required = ["mean", "std", "max", "min", "range", "energy"]
 
         for field in required:
             if field not in data:
@@ -128,6 +103,6 @@ def predict():
 
 if __name__ == "__main__":
     app.run(
-        host="127.0.0.1",
+        host="0.0.0.0",
         port=int(os.environ.get("PORT", 5000))
     )
