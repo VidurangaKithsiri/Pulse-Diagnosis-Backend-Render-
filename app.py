@@ -39,6 +39,9 @@ def health():
 def predict():
 
     data = request.get_json()
+    
+    print("Received JSON:", data)
+
 
     # 🔴 Safety check (prevents 500 crash)
     if not data:
