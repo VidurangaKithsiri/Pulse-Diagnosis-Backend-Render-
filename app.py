@@ -5,8 +5,6 @@ import numpy as np
 import sqlite3
 from functools import wraps
 
-from sqlalchemy import false
-
 app = Flask(__name__)
 
 model = joblib.load("pulse_model.pkl")
