@@ -9,7 +9,11 @@ app = Flask(__name__)
 
 model = joblib.load("pulse_model.pkl")
 
-API_KEY = os.environ.get("msua2003")  #secure key in production
+def new_func():
+    API_KEY = os.environ.get("API_KEY","sm0399")
+    return API_KEY
+
+API_KEY = new_func()  #secure key in production
 
 # Auth function
 def require_api_key(f):
