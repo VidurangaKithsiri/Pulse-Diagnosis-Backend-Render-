@@ -41,6 +41,8 @@ def health():
 @app.route("/api/v1/predict", methods=["POST"])
 @require_api_key
 def predict():
+    print("Headers:", request.headers)
+    print("Raw Data:", request.data)
 
     data = request.get_json()
     
