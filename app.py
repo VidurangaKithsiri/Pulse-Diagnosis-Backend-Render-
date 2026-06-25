@@ -95,10 +95,14 @@ def predict():
         }), 400
 
     except Exception as e:
+        import traceback
+
+        print("ERROR:", str(e))
+        traceback.print_exc()
+
         return jsonify({
             "error": str(e)
-        }), 500
-
+        }), 400
 
 if __name__ == "__main__":
     app.run(
