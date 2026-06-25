@@ -44,7 +44,7 @@ def predict():
     print("Headers:", request.headers)
     print("Raw Data:", request.data)
 
-    data = request.get_json()
+    data = request.get_json(silent=True)
     
     print("Received JSON:", data)
 
