@@ -42,12 +42,12 @@ def home():
     return "Pulse Diagnosis API is running"
 
 
-@app.route("/api/v1/health", methods=["GET"])
-def health():
-
-    return jsonify({
-        "status": "healthy"
-    }), 200
+#@app.route("/api/v1/health", methods=["GET"])
+#def health():
+#
+#    return jsonify({
+#        "status": "healthy"
+#    }), 200
 
 
 @app.route("/api/v1/predict", methods=["POST"])
