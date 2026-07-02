@@ -72,7 +72,10 @@ def predict():
         required = [
             "mean",
             "std",
-            "variance",    
+            "variance",
+            "min",
+            "max",
+            "energy",
         ]
 
         for field in required:
@@ -85,6 +88,9 @@ def predict():
             float(data["mean"]),
             float(data["std"]),
             float(data["variance"]),
+            float(data["min"]),
+            float(data["max"]),
+            float(data["energy"]),
         ]
 
         features = np.array(features).reshape(1, -1)
