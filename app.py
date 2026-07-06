@@ -77,26 +77,16 @@ def health():
 def predict():
 
     try:
-
         print("Headers:", dict(request.headers))
 
         data = request.get_json()
 
-        print("Received JSON:", data)
-
+        # 🔴 Safety check (prevents 500 crash)
         if not data:
-            return jsonify({
-                "error": "No JSON data received"
-            }), 400
+            return jsonify({"error": "No JSON data received"}), 400
 
-        required = [
-            "mean",
-            "std",
-            "min",
-            "max",
-            "range",
-            "energy"
-        ]
+        # Check whether all required fields exist
+        required = ["mean", "std", "max", "min", "range", "energy"]
 
         for field in required:
             if field not in data:
@@ -110,8 +100,10 @@ def predict():
             float(data["min"]),
             float(data["max"]),
             float(data["range"]),
-            float(data["energy"])
-        ]).reshape(1, -1)
+            float(data["energy"]),
+        ])
+
+        features = np.array(features).reshape(1, -1)
 
         prediction = int(model.predict(features)[0])
 
