@@ -62,9 +62,9 @@ def predict():
         features = [
             float(data["mean"]),
             float(data["std"]),
-            float(data["variance"]),
-            float(data["min"]),
             float(data["max"]),
+            float(data["min"]),
+            float(data["range"]),
             float(data["energy"]),
         ]
 
