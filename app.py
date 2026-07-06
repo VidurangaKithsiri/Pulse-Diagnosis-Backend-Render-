@@ -15,7 +15,7 @@ model = joblib.load("pulse_model.pkl")
 # Render:
 # Variable Name : API_KEY
 # Variable Value: sm0399
-API_KEY = os.environ.get("API_KEY")
+API_KEY = os.environ.get("sm0399")
 
 print("Loaded API_KEY:", API_KEY)
 
