@@ -11,7 +11,7 @@ app = Flask(__name__)
 # Load ML model
 model = joblib.load("pulse_model.pkl")
 
-API_KEY = os.environ.get("msua2003")  #secure key in production
+API_KEY = os.environ.get("sm0399")  #secure key in production
 
 # Auth function
 def require_api_key(f):
