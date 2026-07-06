@@ -1,112 +1,77 @@
+import traceback
+
+from flask import Flask, request, jsonify
 import os
 import traceback
-from functools import wraps
-
 import joblib
 import numpy as np
 
 from functools import wraps
 from flask import Flask, request, jsonify
-from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
 # Load ML model
-# -----------------------------
-# Load ML Model
-# -----------------------------
 model = joblib.load("pulse_model.pkl")
 
+API_KEY = os.environ.get("sm0399")  #secure key in production
 # Read API key from Render Environment Variable
 # Variable Name: API_KEY
 # Variable Value: sm0399
-API_KEY = os.environ.get("API_KEY")
-# -----------------------------
-# API Key
-# Render Environment Variable:
-# Name : API_KEY
-# Value: sm0399
-# -----------------------------
-API_KEY = os.environ.get("API_KEY", "sm0399")
+API_KEY = os.environ.get("sm0399")
 
-print("=" * 50)
-print("Pulse Diagnosis API Starting...")
 print("Loaded API_KEY:", API_KEY)
-print("=" * 50)
 
-
-# -----------------------------
-# API Key Authentication
-# -----------------------------
+# Auth function
 def require_api_key(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-@@ -27,11 +39,6 @@ def decorated(*args, **kwargs):
-        print("Received API Key:", key)
-        print("Expected API Key:", API_KEY)
 
-        if API_KEY is None:
-            return jsonify({
-                "error": "Server API key is not configured."
-            }), 500
+        key = request.headers.get("x-api-key")
 
-        if key != API_KEY:
-            return jsonify({
-                "error": "Unauthorized access"
-@@ -40,3 +47,108 @@ def decorated(*args, **kwargs):
-        return f(*args, **kwargs)
+        if key == API_KEY:
+            return f(*args, **kwargs)
+
+        return jsonify({
+            "error": "Unauthorized access"
+        }), 401
 
     return decorated
 
-
-# -----------------------------
-# Home
-# -----------------------------
-@app.route("/", methods=["GET"])
-def home():
-    return jsonify({
-        "message": "Pulse Diagnosis API is running"
-    }), 200
-
-
-# -----------------------------
-# Health Check
-# -----------------------------
 @app.route("/api/v1/health", methods=["GET"])
 def health():
     return jsonify({
         "status": "healthy"
     }), 200
 
+        print("Received API Key:", key)
+        print("Expected API Key:", API_KEY)
 
-# -----------------------------
-# Prediction Endpoint
-# -----------------------------
 @app.route("/api/v1/predict", methods=["POST"])
 @require_api_key
 def predict():
-
-    try:
-
-        print("Headers:", dict(request.headers))
-
-        data = request.get_json()
-
-        print("Received JSON:", data)
-
-        if not data:
+    
+    print("Headers:", request.headers)
+    print("Raw Data:", request.data)
+        if API_KEY is None:
             return jsonify({
-                "error": "No JSON data received"
-            }), 400
+                "error": "Server API key is not configured."
+            }), 500
 
-        required = [
-            "mean",
-            "std",
-            "min",
-            "max",
-            "range",
-            "energy"
-        ]
+    data = request.get_json()
+        if key != API_KEY:
+            return jsonify({
+                "error": "Unauthorized access"
+            }), 401
+
+    # 🔴 Safety check (prevents 500 crash)
+    if not data:
+        return jsonify({"error": "No JSON data received"}), 400
+    
+    try:
+        # Check whether all required fields exist
+        required = ["mean", "std", "max", "min", "range", "energy"]
+        return f(*args, **kwargs)
 
         for field in required:
             if field not in data:
@@ -114,14 +79,16 @@ def predict():
                     "error": f"'{field}' is missing"
                 }), 400
 
-        features = np.array([
+        features = [
             float(data["mean"]),
             float(data["std"]),
-            float(data["min"]),
             float(data["max"]),
+            float(data["min"]),
             float(data["range"]),
-            float(data["energy"])
-        ]).reshape(1, -1)
+            float(data["energy"]),
+        ]
+
+        features = np.array(features).reshape(1, -1)
 
         prediction = int(model.predict(features)[0])
 
@@ -136,7 +103,7 @@ def predict():
             "prediction": prediction,
             "status": status,
             "risk_level": risk
-        }), 200
+        })
 
     except ValueError:
         return jsonify({
@@ -144,21 +111,18 @@ def predict():
         }), 400
 
     except Exception as e:
-
-        print("Prediction Error:")
+        print("ERROR:", str(e))
         traceback.print_exc()
 
         return jsonify({
-            "error": str(e)
-        }), 500
+        "error": str(e)
+        }), 400
+        
 
+    
 
-# -----------------------------
-# Run Local Server
-# -----------------------------
 if __name__ == "__main__":
     app.run(
         host="0.0.0.0",
-        port=int(os.environ.get("PORT", 5000)),
-        debug=True
+        port=int(os.environ.get("PORT", 5000))
     )
