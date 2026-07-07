@@ -15,7 +15,7 @@ model = joblib.load("pulse_model.pkl")
 # Render:
 # Variable Name : API_KEY
 # Variable Value: sm0399
-API_KEY = os.environ.get("sm0399")
+API_KEY = os.environ.get("API_KEY")
 
 print("Loaded API_KEY:", API_KEY)
 
@@ -140,8 +140,4 @@ if __name__ == "__main__":
     app.run(
         host="0.0.0.0",
         port=int(os.environ.get("PORT", 5000))
-<<<<<<< HEAD
     )
-=======
-    )
->>>>>>> 1fe53be (Update app.py)
