@@ -8,25 +8,33 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-# Load ML model
+# -----------------------------
+# Load ML Model
+# -----------------------------
 model = joblib.load("pulse_model.pkl")
 
-# Read API key from Render Environment Variable
-# Render:
-# Variable Name : API_KEY
-# Variable Value: sm0399
-API_KEY = os.environ.get("API_KEY")
+# -----------------------------
+# API Key
+# Render Environment Variable:
+# Name : API_KEY
+# Value: sm0399
+# -----------------------------
+API_KEY = os.environ.get("API_KEY", "sm0399")
 
+print("=" * 50)
+print("Pulse Diagnosis API Starting...")
 print("Loaded API_KEY:", API_KEY)
+print("=" * 50)
 
 
-# ==========================
+# -----------------------------
 # API Key Authentication
-# ==========================
+# -----------------------------
 def require_api_key(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        key = request.headers.get("x-api-key")
+
+        key = request.headers.get("X-API-Key")
 
         print("Received API Key:", key)
         print("Expected API Key:", API_KEY)
@@ -46,9 +54,19 @@ def require_api_key(f):
     return decorated
 
 
-# ==========================
+# -----------------------------
+# Home
+# -----------------------------
+@app.route("/", methods=["GET"])
+def home():
+    return jsonify({
+        "message": "Pulse Diagnosis API is running"
+    }), 200
+
+
+# -----------------------------
 # Health Check
-# ==========================
+# -----------------------------
 @app.route("/api/v1/health", methods=["GET"])
 def health():
     return jsonify({
@@ -56,53 +74,49 @@ def health():
     }), 200
 
 
-# ==========================
+# -----------------------------
 # Prediction Endpoint
-# ==========================
+# -----------------------------
 @app.route("/api/v1/predict", methods=["POST"])
 @require_api_key
 def predict():
 
-    print("Headers:", dict(request.headers))
-    print("Raw Data:", request.data)
-
-    data = request.get_json(silent=True)
-
-    # Check JSON
-    if data is None:
-        return jsonify({
-            "error": "No JSON data received"
-        }), 400
-
     try:
-        # Required fields
+
+        print("Headers:", dict(request.headers))
+
+        data = request.get_json()
+
+        print("Received JSON:", data)
+
+        if not data:
+            return jsonify({
+                "error": "No JSON data received"
+            }), 400
+
         required = [
             "mean",
             "std",
-            "max",
             "min",
+            "max",
             "range",
             "energy"
         ]
 
-        # Check missing fields
         for field in required:
             if field not in data:
                 return jsonify({
                     "error": f"'{field}' is missing"
                 }), 400
 
-        # Convert to float
-        features = [
+        features = np.array([
             float(data["mean"]),
             float(data["std"]),
-            float(data["max"]),
             float(data["min"]),
+            float(data["max"]),
             float(data["range"]),
-            float(data["energy"]),
-        ]
-
-        features = np.array(features).reshape(1, -1)
+            float(data["energy"])
+        ]).reshape(1, -1)
 
         prediction = int(model.predict(features)[0])
 
@@ -125,7 +139,8 @@ def predict():
         }), 400
 
     except Exception as e:
-        print("ERROR:", str(e))
+
+        print("Prediction Error:")
         traceback.print_exc()
 
         return jsonify({
@@ -133,11 +148,12 @@ def predict():
         }), 500
 
 
-# ==========================
-# Run Flask App
-# ==========================
+# -----------------------------
+# Run Local Server
+# -----------------------------
 if __name__ == "__main__":
     app.run(
         host="0.0.0.0",
-        port=int(os.environ.get("PORT", 5000))
+        port=int(os.environ.get("PORT", 5000)),
+        debug=True
     )
