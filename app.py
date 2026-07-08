@@ -4,49 +4,50 @@ from functools import wraps
 
 import joblib
 import numpy as np
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
-# -----------------------------
-# Load ML Model
-# -----------------------------
+# ==========================================================
+# LOAD MODEL
+# ==========================================================
+
 model = joblib.load("pulse_model.pkl")
+feature_columns = joblib.load("feature_columns.pkl")
 
-# -----------------------------
-# API Key
-# Render Environment Variable:
-# Name : API_KEY
-# Value: sm0399
-# -----------------------------
-API_KEY = os.environ.get("API_KEY", "sm0399")
+API_KEY = os.environ.get("API_KEY")
 
-print("=" * 50)
-print("Pulse Diagnosis API Starting...")
-print("Loaded API_KEY:", API_KEY)
-print("=" * 50)
+print("===================================================")
+print(" Pulse Diagnosis Backend Started")
+print("===================================================")
+print("Loaded Features :", feature_columns)
+print("API KEY Loaded :", API_KEY is not None)
+print("===================================================")
 
 
-# -----------------------------
-# API Key Authentication
-# -----------------------------
+# ==========================================================
+# API KEY AUTHENTICATION
+# ==========================================================
+
 def require_api_key(f):
+
     @wraps(f)
     def decorated(*args, **kwargs):
 
-        key = request.headers.get("X-API-Key")
-
-        print("Received API Key:", key)
-        print("Expected API Key:", API_KEY)
+        key = request.headers.get("x-api-key")
 
         if API_KEY is None:
+
             return jsonify({
-                "error": "Server API key is not configured."
+                "success": False,
+                "message": "Server API key is missing."
             }), 500
 
         if key != API_KEY:
+
             return jsonify({
-                "error": "Unauthorized access"
+                "success": False,
+                "message": "Unauthorized"
             }), 401
 
         return f(*args, **kwargs)
@@ -54,106 +55,200 @@ def require_api_key(f):
     return decorated
 
 
-# -----------------------------
-# Home
-# -----------------------------
-@app.route("/", methods=["GET"])
-def home():
-    return jsonify({
-        "message": "Pulse Diagnosis API is running"
-    }), 200
+# ==========================================================
+# HEALTH
+# ==========================================================
 
-
-# -----------------------------
-# Health Check
-# -----------------------------
 @app.route("/api/v1/health", methods=["GET"])
 def health():
+
     return jsonify({
-        "status": "healthy"
-    }), 200
+
+        "success": True,
+        "status": "Healthy",
+
+        "model": "Extra Trees",
+
+        "version": "2.0"
+
+    })
 
 
-# -----------------------------
-# Prediction Endpoint
-# -----------------------------
+# ==========================================================
+# HOME
+# ==========================================================
+
+@app.route("/")
+def home():
+
+    return jsonify({
+
+        "message": "Pulse Diagnosis Backend",
+
+        "status": "Running"
+
+    })
+
+
+# ==========================================================
+# PREDICT
+# ==========================================================
+
 @app.route("/api/v1/predict", methods=["POST"])
 @require_api_key
 def predict():
 
     try:
 
-        print("Headers:", dict(request.headers))
-
         data = request.get_json()
 
-        print("Received JSON:", data)
+        if data is None:
 
-        if not data:
             return jsonify({
-                "error": "No JSON data received"
+
+                "success": False,
+
+                "message": "JSON body not found."
+
             }), 400
 
-        required = [
-            "mean",
-            "std",
-            "min",
-            "max",
-            "range",
-            "energy"
-        ]
+        # ==================================================
+        # CHECK REQUIRED FEATURES
+        # ==================================================
 
-        for field in required:
-            if field not in data:
+        for feature in feature_columns:
+
+            if feature not in data:
+
                 return jsonify({
-                    "error": f"'{field}' is missing"
+
+                    "success": False,
+
+                    "message": f"{feature} is missing."
+
                 }), 400
 
-        features = np.array([
-            float(data["mean"]),
-            float(data["std"]),
-            float(data["min"]),
-            float(data["max"]),
-            float(data["range"]),
-            float(data["energy"])
-        ]).reshape(1, -1)
+        # ==================================================
+        # BUILD FEATURE VECTOR
+        # ==================================================
+
+        features = []
+
+        for feature in feature_columns:
+
+            features.append(float(data[feature]))
+
+        features = np.array(features).reshape(1, -1)
+
+        # ==================================================
+        # PREDICTION
+        # ==================================================
 
         prediction = int(model.predict(features)[0])
 
+        probability = model.predict_proba(features)[0]
+
+        confidence = float(np.max(probability) * 100)
+
+        # ==================================================
+        # LABEL MAPPING
+        # ==================================================
+
         if prediction == 0:
-            status = "Normal"
+
+            diagnosis = "Normal"
+
             risk = "Low"
+
+            recommendation = (
+                "Pulse pattern appears normal. "
+                "Continue regular monitoring."
+            )
+
         else:
-            status = "Abnormal"
+
+            diagnosis = "Abnormal"
+
             risk = "High"
 
+            recommendation = (
+                "Abnormal pulse pattern detected. "
+                "Consider consulting a healthcare professional."
+            )
+
+        # ==================================================
+        # RESPONSE
+        # ==================================================
+
         return jsonify({
-            "prediction": prediction,
-            "status": status,
-            "risk_level": risk
+
+            "success": True,
+
+            "prediction_id": prediction,
+
+            "prediction": diagnosis,
+
+            "confidence": round(confidence, 2),
+
+            "risk_level": risk,
+
+            "recommendation": recommendation,
+
+            "model": "Extra Trees",
+
+            "features": {
+
+                "mean": float(data["mean"]),
+
+                "std": float(data["std"]),
+
+                "variance": float(data["variance"]),
+
+                "max": float(data["max"]),
+
+                "min": float(data["min"]),
+
+                "range": float(data["range"]),
+
+                "energy": float(data["energy"])
+
+            }
+
         }), 200
 
     except ValueError:
+
         return jsonify({
-            "error": "All feature values must be numeric."
+
+            "success": False,
+
+            "message": "All features must be numeric."
+
         }), 400
 
     except Exception as e:
 
-        print("Prediction Error:")
         traceback.print_exc()
 
         return jsonify({
-            "error": str(e)
+
+            "success": False,
+
+            "message": str(e)
+
         }), 500
 
 
-# -----------------------------
-# Run Local Server
-# -----------------------------
+# ==========================================================
+# RUN SERVER
+# ==========================================================
+
 if __name__ == "__main__":
+
     app.run(
+
         host="0.0.0.0",
-        port=int(os.environ.get("PORT", 5000)),
-        debug=True
+
+        port=int(os.environ.get("PORT", 5000))
+
     )
