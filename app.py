@@ -88,6 +88,7 @@ def home():
         "status": "Running"
 
     })
+    
 
 
 # ==========================================================
@@ -139,6 +140,12 @@ def predict():
             features.append(float(data[feature]))
 
         features = np.array(features).reshape(1, -1)
+        
+        print("Incoming JSON:", data)
+        print("Features:", features)
+        print("Shape:", features.shape)
+        
+        print(type(model))
 
         # ==================================================
         # PREDICTION
@@ -227,15 +234,15 @@ def predict():
         }), 400
 
     except Exception as e:
+        import traceback
 
+        print("=" * 80)
+        print("SERVER ERROR")
         traceback.print_exc()
+        print("=" * 80)
 
         return jsonify({
-
-            "success": False,
-
-            "message": str(e)
-
+            "error": str(e)
         }), 500
 
 
