@@ -16,6 +16,7 @@ model = joblib.load("pulse_model.pkl")
 feature_columns = joblib.load("feature_columns.pkl")
 
 API_KEY = os.environ.get("API_KEY")
+API_KEY = os.environ.get("API_KEY", "sm0399")
 
 print("===================================================")
 print(" Pulse Diagnosis Backend Started")
