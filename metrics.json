@@ -1,0 +1,66 @@
+{
+  "evaluation_target": "Agreement with heuristic feature-deviation labels, NOT disease/health accuracy",
+  "heldout_accuracy": 0.9838709677419355,
+  "confusion_matrix": [
+    [
+      224,
+      5
+    ],
+    [
+      1,
+      142
+    ]
+  ],
+  "classification_report": {
+    "Normal": {
+      "precision": 0.9955555555555555,
+      "recall": 0.9781659388646288,
+      "f1-score": 0.986784140969163,
+      "support": 229.0
+    },
+    "Abnormal": {
+      "precision": 0.9659863945578231,
+      "recall": 0.993006993006993,
+      "f1-score": 0.9793103448275862,
+      "support": 143.0
+    },
+    "accuracy": 0.9838709677419355,
+    "macro avg": {
+      "precision": 0.9807709750566893,
+      "recall": 0.9855864659358109,
+      "f1-score": 0.9830472428983745,
+      "support": 372.0
+    },
+    "weighted avg": {
+      "precision": 0.9841889157096531,
+      "recall": 0.9838709677419355,
+      "f1-score": 0.9839111494416213,
+      "support": 372.0
+    }
+  },
+  "feature_importance": {
+    "mean": 0.0,
+    "std": 0.0,
+    "variance": 0.0,
+    "max": 0.30410671695410674,
+    "min": 0.22081145561567883,
+    "range": 0.47508182743021443,
+    "energy": 0.0
+  },
+  "train_class_counts": [
+    1039,
+    445
+  ],
+  "test_class_counts": [
+    229,
+    143
+  ],
+  "sensor_smoke_test": {
+    "windows": 20,
+    "prediction_counts": {
+      "0": 17,
+      "1": 3
+    },
+    "ground_truth_available": false
+  }
+}

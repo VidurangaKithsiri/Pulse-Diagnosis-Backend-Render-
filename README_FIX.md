@@ -1,15 +1,10 @@
-# Backend correction
-
-Replace the backend files with this ZIP and redeploy Render. Preserve API_KEY in the Render environment; there is no hardcoded fallback key anymore. Keep the existing start command: gunicorn app:app.
-
-Changes: validates JSON/numeric finite values, loads artifacts relative to app files, enforces API_KEY, matches model scikit-learn version (1.7.1), and checks features against the cleaned 1144-row training domain reconstructed from the supplied CSV. The original requirements.txt was UTF-16 and pinned scikit-learn 1.5.1; this file is UTF-8.
-
-Raw MAX30102 30-second features do not match normalized 5-second training data. Out-of-domain inputs now return HTTP 200 with prediction=Unavailable, prediction_id=-1, status=OUT_OF_DISTRIBUTION, confidence=null and risk_level=Not assessed. This response prevents unsupported sensor data being called high risk. The recent history-enabled Android client displays and records the response. Older Diagnosis.java treats ID -1 as empty.
-
-In-domain Normal/Abnormal labels are retained as research pattern labels, with risk_level=Not assessed. The original backend mapped every Abnormal output to High even though labels were created from feature deviations. No artificial Normal results or threshold changes were introduced.
-
-Model unchanged. To make reliable sensor classifications, rebuild feature data from all subject recordings with correct timestamp/sample-rate header handling, fix the builder's segmentation indentation, use identical filtering/normalization/window lengths during training and inference, obtain independently justified labels, and validate across subjects and MAX30102 recordings. Summary features alone cannot reconstruct the original filtered waveform. The included data contains raw recordings but no verified clinical labels.
-
-Tests: four core unittest cases passed (domain rejection, in-domain classification, invalid numbers and missing fields). Python compilation passed. Tests ran under local scikit-learn 1.8.0 with a version warning; production is pinned to the artifact version 1.7.1. Flask HTTP endpoints and deployed Render service were not exercised here because Flask was unavailable. Run pip install -r requirements.txt, then python -m unittest -v test_prediction_core, then test API requests in your deployed environment.
-
-This fixes misleading HIGH output and API handling; it does not establish a medically valid prediction model. No remote deployment was performed.
+# Normal / Abnormal research pulse-pattern model
+Training source: ../training/train_model.py and ../training/model_training.ipynb.
+Raw S1 and real MAX30102 source recordings are included in training/ for reproduction.
+Pipeline: raw waveform -> 0.7–4 Hz third-order bandpass -> resample to 64 Hz -> five-second windows -> per-window z-score -> seven features -> Extra Trees.
+Training labels: robust absolute deviations of max/min/range from TRAINING medians/MAD; training scores above the 70th percentile are Abnormal, otherwise Normal.
+Labels are statistical feature-pattern categories, not disease or medical-risk diagnoses. risk_level remains Not medically assessed; pattern_level reports Lower/Higher deviation.
+Model: 300 Extra Trees, max_depth=12, min_samples_leaf=2, class_weight=balanced, random_state=42. All settings/source/metrics are reproducible.
+Data: one training subject S1; first 80% of each recording used for training, last 20% held out. Accuracy is agreement with heuristic labels, NOT clinical accuracy or unseen-subject accuracy.
+Input: POST /api/v1/predict with x-api-key and JSON {sample_rate:64,sensor:MAX30102,samples:[raw values]}. Updated firmware/client supply this input. Old raw summary statistics cannot reconstruct filtering and are rejected.
+Current endpoints retain the prior URL. Set Render API_KEY to match your existing client configuration. No Firebase or guardian modifications are included.

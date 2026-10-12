@@ -1,0 +1,44 @@
+{
+  "pipeline_version": "ppg-window-v1",
+  "features": [
+    "mean",
+    "std",
+    "variance",
+    "max",
+    "min",
+    "range",
+    "energy"
+  ],
+  "sample_rate_hz": 64,
+  "window_seconds": 5,
+  "label_map": {
+    "0": "Normal",
+    "1": "Abnormal"
+  },
+  "label_origin": "Training-only median/MAD feature deviations; scores above training 70th percentile are Abnormal",
+  "label_features": [
+    "max",
+    "min",
+    "range"
+  ],
+  "label_median": {
+    "max": 2.20820903514989,
+    "min": -2.462677876498471,
+    "range": 4.7046571042723375
+  },
+  "label_mad": {
+    "max": 0.43138699906053335,
+    "min": 0.3010202476349535,
+    "range": 0.5625832998060125
+  },
+  "label_threshold": 4.289175971912493,
+  "medical_risk_validated": false,
+  "training_subjects": [
+    "S1"
+  ],
+  "training_windows": 1484,
+  "test_windows": 372,
+  "split": "Within-recording chronological 80/20; NOT an unseen-subject evaluation",
+  "training_source_sha256": "be0ed3d8535d9821e96817eadd8a7ad1cfcd34ff942b8e0d784f43b4a53e10a5",
+  "sklearn_version": "1.8.0"
+}
